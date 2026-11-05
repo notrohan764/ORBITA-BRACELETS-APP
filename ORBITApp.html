@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d0c10">
+<link rel="icon" id="favicon" href="data:,">
+<link rel="apple-touch-icon" id="touchicon" href="data:,">
+<title>ORBITA – Bracelet App Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d0c10; --card:#17161b; --card2:#1e1d23; --ink:#f4efe8; --body:#c9c3cc; --muted:#a09aa6; --dim:#6d6974;
+    --line:rgba(244,239,232,.08); --line2:rgba(244,239,232,.16); --accent:#5b8cff; --bad:#ff6b6b; --ok:#6fd6a8;
+    --sans:Inter,'Helvetica Neue',Helvetica,Arial,sans-serif;
+    --ease:cubic-bezier(.2,.8,.2,1); --out:cubic-bezier(.16,1,.3,1); --spring:cubic-bezier(.34,1.25,.5,1);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  body{padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);overflow-x:hidden}
+  button,select,input{font:inherit;color:inherit}
+  button{cursor:pointer}
+  [hidden]{display:none!important}
+  .app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:14px 18px calc(120px + env(safe-area-inset-bottom))}
+  .orbits{position:fixed;left:50%;top:-60px;width:1100px;transform:translateX(-50%);pointer-events:none;z-index:0;opacity:.8}
+  .orbits .ring{transform-origin:600px 420px;animation:drift 80s linear infinite}
+  @keyframes drift{to{transform:rotate(360deg)}}
+
+  /* ---------- motion ---------- */
+  @keyframes rise{from{opacity:0;transform:translateY(12px)}}
+  .view.enter > *{animation:rise .5s var(--ease) both}
+  .view.enter > *:nth-child(2){animation-delay:.04s}
+  .view.enter > *:nth-child(3){animation-delay:.08s}
+  .view.enter > *:nth-child(4){animation-delay:.12s}
+  .view.enter > *:nth-child(5){animation-delay:.16s}
+  .view.enter > *:nth-child(6){animation-delay:.2s}
+  .view.enter > *:nth-child(n+7){animation-delay:.24s}
+  .view{transition:opacity .16s ease,transform .16s ease}
+  .view.leaving{opacity:0;transform:translateY(-6px)}
+  body.booting .view > *{animation-play-state:paused}
+  body.booting{overflow:hidden}
+  .press:active{transform:scale(.97)}
+
+  /* ---------- header ---------- */
+  .top{display:flex;align-items:center;justify-content:space-between;padding:4px 0 22px}
+  .brand{display:flex;align-items:center;gap:11px}
+  .appicon{width:36px;height:36px;border-radius:10px;background:#0A0A0B;border:1px solid var(--line2);display:grid;place-items:center;flex:none}
+  .appicon svg{width:30px;height:30px;display:block}
+  .appicon.lg{width:64px;height:64px;border-radius:17px}
+  .appicon.lg svg{width:52px;height:52px}
+  .brand b{font-family:Jost,var(--sans);font-weight:400;letter-spacing:.42em;font-size:15px}
+  .iconbtn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line2);background:transparent;display:grid;place-items:center;transition:transform .15s var(--ease),background .2s}
+  .iconbtn:hover{background:rgba(244,239,232,.04)}
+  .iconbtn:active{transform:scale(.92)}
+
+  /* ---------- type ---------- */
+  .eyebrow{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  h1.title{font-size:34px;line-height:1.05;font-weight:700;letter-spacing:-.035em;margin:0}
+  h1.title i{color:var(--accent);font-style:normal}
+  .lede{color:var(--muted);font-size:14.5px;margin:6px 0 0}
+  .head{margin-bottom:18px}
+  .head-row{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+  .gtitle{display:flex;justify-content:space-between;align-items:baseline;margin:26px 4px 9px}
+  .gtitle .eyebrow{font-size:10.5px}
+  .gtitle button{background:none;border:0;padding:0;color:var(--accent);font-weight:600;font-size:13px}
+  .foot{color:var(--dim);font-size:12.5px;margin:10px 4px 0;line-height:1.5}
+  .foot b{color:var(--muted);font-weight:600}
+
+  /* ---------- grouped list ---------- */
+  .group{background:var(--card);border-radius:18px;overflow:hidden}
+  .row{position:relative;display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 16px;border:0;background:none;width:100%;text-align:left;color:var(--ink)}
+  .row + .row{box-shadow:inset 0 1px 0 var(--line)}
+  .row.link{cursor:pointer;transition:background .15s}
+  .row.link:active{background:rgba(244,239,232,.04)}
+  .row .k{flex:1;min-width:0;font-size:15px;font-weight:500}
+  .row .k small{display:block;color:var(--muted);font-size:13px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+  .row .v{color:var(--muted);font-size:14.5px;text-align:right;max-width:58%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chev{color:var(--dim);flex:none}
+  .row select.ov{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px;appearance:none;-webkit-appearance:none;border:0}
+  .row.stack{flex-direction:column;align-items:stretch;gap:6px;padding:12px 16px 14px}
+  .row.stack .lbl{font-size:12.5px;color:var(--muted);font-weight:500}
+  .rin{width:100%;background:none;border:0;outline:none;color:var(--ink);font-size:16px;padding:0}
+  .rin::placeholder{color:#58545f}
+  .row.stack{transition:background .25s ease}
+  .row.stack:focus-within{background:rgba(91,140,255,.05)}
+  .row.add{color:var(--accent);font-weight:600;justify-content:center}
+  .row.danger .k{color:var(--bad)}
+  .warnline{font-size:12.5px;color:#ffb3b3;margin:0 4px;max-height:0;opacity:0;overflow:hidden;transition:max-height .4s var(--out),opacity .3s ease,margin .4s var(--out)}
+  .warnline.show{max-height:60px;opacity:1;margin-top:8px}
+
+  .bdg{width:30px;height:30px;border-radius:50%;background:linear-gradient(145deg,#ECECEF,#9DA0A8);display:grid;place-items:center;font-weight:700;font-size:12px;color:#17161b;flex:none}
+  .num{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--c);color:var(--c);display:grid;place-items:center;font-weight:700;font-size:12.5px;flex:none;transition:background .3s,color .3s}
+  .row.active .num{background:var(--c);color:var(--bg)}
+  .step{font-variant-numeric:tabular-nums;font-size:12.5px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:6px;flex:none;min-width:66px;white-space:nowrap}
+  .step i{width:8px;height:8px;border-radius:50%;background:var(--c);flex:none}
+  .row .k small.dflt{color:var(--dim);font-style:italic}
+  .pill112{font-size:10.5px;font-weight:700;letter-spacing:.06em;color:var(--bad);border:1px solid rgba(255,107,107,.45);border-radius:999px;padding:2px 7px;flex:none}
+
+  /* switch */
+  .switch{position:relative;width:48px;height:29px;flex:none;cursor:pointer;display:inline-block}
+  .switch input{position:absolute;opacity:0;width:0;height:0}
+  .switch span{position:absolute;inset:0;background:#2b2a31;border-radius:999px;transition:background .25s}
+  .switch span:before{content:"";position:absolute;width:23px;height:23px;left:3px;top:3px;background:var(--ink);border-radius:50%;transition:transform .4s var(--out)}
+  .switch input:checked+span{background:var(--accent)}
+  .switch input:checked+span:before{transform:translateX(19px)}
+
+  /* segmented */
+  .seg{position:relative;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--card);border-radius:14px;padding:4px}
+  .seg .ind{position:absolute;top:4px;bottom:4px;left:4px;border-radius:10px;background:var(--card2);box-shadow:0 1px 0 var(--line2) inset;transition:transform .45s var(--out),width .45s var(--out)}
+  .seg button{position:relative;z-index:1;border:0;background:none;padding:10px 8px;border-radius:10px;font-weight:600;font-size:14px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:8px;transition:color .2s}
+  .seg button.on{color:var(--ink)}
+  .seg .bdg{width:22px;height:22px;font-size:10px}
+
+  /* buttons */
+  .btn:disabled{opacity:.3;pointer-events:none}
+  .btn{border:0;border-radius:999px;padding:12px 18px;font-weight:600;font-size:14px;background:var(--ink);color:var(--bg);transition:transform .15s var(--ease),background .25s,color .25s}
+  .btn:active{transform:scale(.96)}
+  .btn.acc{background:var(--accent);color:#0d0c10}
+  .btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line2)}
+  .btn.small{padding:8px 14px;font-size:13px}
+  .btn.full{width:100%}
+  .btn.danger{background:transparent;color:var(--bad);box-shadow:inset 0 0 0 1px rgba(255,107,107,.4)}
+
+  /* ---------- home: device card ---------- */
+  .device{background:var(--card);border-radius:22px;overflow:hidden}
+  .device-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 14px 0 16px}
+  .status{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);font-weight:500}
+  .dot{width:7px;height:7px;border-radius:50%;background:#55525c;transition:background .3s}
+  .dot.on{background:var(--accent);animation:ping 2s infinite}
+  .dot.busy{background:var(--accent);animation:blink .8s infinite}
+  @keyframes ping{0%{box-shadow:0 0 0 0 rgba(91,140,255,.55)}70%,100%{box-shadow:0 0 0 7px rgba(91,140,255,0)}}
+  @keyframes blink{50%{opacity:.25}}
+  .stage svg{display:block;width:100%;height:auto}
+  .device-foot{display:flex;justify-content:space-between;align-items:center;padding:0 16px 14px;font-size:12.5px;color:var(--dim)}
+  .device-foot button{background:none;border:0;color:var(--muted);font-size:12.5px;font-weight:600;padding:4px 0}
+  .hit{cursor:pointer}
+  .hit:hover .metal{filter:brightness(1.1)}
+  #pod{transition:transform .55s var(--spring)}
+  .detached #pod{transform:translateY(-34px)}
+  #podFloat{animation:float 4s ease-in-out infinite}
+  @keyframes float{50%{transform:translateY(-2px)}}
+  .socket{opacity:0;transition:opacity .4s}
+  .detached .socket{opacity:1}
+  .btnshape{transform-box:fill-box;transform-origin:center}
+  .pressed{animation:pressed .3s var(--ease)}
+  @keyframes pressed{40%{transform:scaleX(.7)}}
+  .ripple{fill:none;stroke:var(--accent);stroke-width:1.5;opacity:0;transform-box:fill-box;transform-origin:center}
+  .ripple.go{animation:ripple .7s var(--ease)}
+  @keyframes ripple{0%{opacity:.9;transform:scale(.4)}100%{opacity:0;transform:scale(2.2)}}
+  #led.live{animation:blink 2.4s infinite}
+  .row{transition:background .4s ease}
+  .row.flash{background:rgba(91,140,255,.1);transition:background .1s}
+
+  .mini-meter{display:flex;gap:3px;flex:none}
+  .mini-meter i{width:14px;height:4px;border-radius:99px;background:var(--line2);transition:background .3s}
+
+  /* ---------- escalation status ---------- */
+  .lvl-card{background:var(--card);border-radius:22px;padding:18px 16px 16px}
+  .lvl-now{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+  .lvl-now b{display:block;font-size:22px;letter-spacing:-.02em;font-weight:700}
+  .lvl-now b.swap{animation:rise .35s var(--out)}
+  .meter{display:flex;gap:5px;margin:16px 0 14px}
+  .meter i{flex:1;height:4px;border-radius:99px;background:var(--line2);transition:background .35s;transform-origin:left}
+  .meter i.pop{animation:fill .45s var(--ease)}
+  @keyframes fill{from{transform:scaleX(0)}}
+  .lvl-actions{display:flex;gap:8px}
+  .lvl-actions .btn{flex:1}
+  .off{opacity:.35;pointer-events:none;transition:opacity .3s}
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{border:0;box-shadow:inset 0 0 0 1px var(--line2);background:transparent;border-radius:999px;padding:7px 12px;font-size:13px;font-weight:500;color:var(--body);transition:transform .14s var(--ease),background .2s,color .2s}
+  .chip:active{transform:scale(.95)}
+  .chip.on{background:var(--ink);box-shadow:none;color:var(--bg);font-weight:600}
+  .chip.add{box-shadow:inset 0 0 0 1px rgba(91,140,255,.5);color:var(--accent)}
+  .colors{display:flex;gap:12px}
+  .sw{width:26px;height:26px;border-radius:50%;border:0;padding:0;box-shadow:0 0 0 2px var(--card);transition:box-shadow .2s,transform .14s}
+  .sw.on{box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--ink)}
+  .sw:active{transform:scale(.9)}
+
+  /* ---------- chats ---------- */
+  .crow .av{width:42px;height:42px}
+  .av{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:15px;color:var(--bg);flex:none}
+  .crow .k small.al{color:var(--accent)}
+  .crow .rt{display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-size:12px;color:var(--dim);flex:none}
+  .ub{min-width:20px;height:20px;border-radius:999px;background:var(--accent);color:#0d0c10;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 6px;animation:bump .4s var(--spring)}
+  @keyframes bump{from{transform:scale(.4)}}
+  .thread-head{display:flex;align-items:center;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+  .thread-head b{font-size:17px}
+  .thread-head small{display:block;color:var(--muted);font-size:12.5px}
+  .msgs{display:flex;flex-direction:column;gap:8px;padding:16px 0 90px}
+  .day{align-self:center;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:4px 0}
+  .bub{max-width:80%;padding:10px 13px;border-radius:18px;font-size:15px;animation:pop .35s var(--spring) both}
+  @keyframes pop{from{opacity:0;transform:translateY(8px) scale(.96)}}
+  .bub.them{align-self:flex-start;background:var(--card);border-bottom-left-radius:6px}
+  .bub.me{align-self:flex-end;background:var(--ink);color:var(--bg);border-bottom-right-radius:6px}
+  .bub time{display:block;font-size:10.5px;opacity:.55;margin-top:3px}
+  .alert{align-self:stretch;max-width:none;background:var(--card);border-radius:16px;padding:12px 14px;position:relative;overflow:hidden}
+  .alert:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c,var(--accent))}
+  .alert .eyebrow{color:var(--c,var(--accent));display:block;margin-bottom:5px;font-size:10px}
+  .alert p{margin:0 0 4px;font-weight:600}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .tag{font-size:12px;box-shadow:inset 0 0 0 1px var(--line2);border-radius:999px;padding:4px 9px;color:var(--body);display:inline-flex;align-items:center;gap:6px}
+  .tag.live:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);animation:ping 2s infinite}
+  .call112{margin-top:10px;width:100%;border:0;border-radius:12px;padding:11px;font-weight:700;background:var(--bad);color:#fff}
+  .composer{transform:translateY(110%);opacity:0;pointer-events:none;transition:transform .45s var(--out),opacity .3s ease}
+  .composer.show{transform:none;opacity:1;pointer-events:auto}
+  .composer{position:fixed;left:0;right:0;bottom:0;z-index:30;padding:10px 18px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(to top,var(--bg) 70%,rgba(13,12,16,0))}
+  .composer form{max-width:444px;margin:0 auto;display:flex;gap:8px}
+  .composer input{flex:1;border:0;border-radius:999px;padding:13px 18px;background:var(--card);outline:none;font-size:16px;color:var(--ink)}
+  .send{width:48px;height:48px;flex:none;border-radius:50%;border:0;background:var(--accent);display:grid;place-items:center;transition:transform .14s var(--ease)}
+  .send:active{transform:scale(.9)}
+
+  /* ---------- tab bar ---------- */
+  .tabs{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:30;display:flex;gap:2px;padding:5px;background:rgba(23,22,27,.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 0 0 1px var(--line2),0 10px 30px rgba(0,0,0,.4);border-radius:999px;transition:transform .35s var(--ease),opacity .35s}
+  .tabs.hide{transform:translateX(-50%) translateY(130%);opacity:0;pointer-events:none}
+  .tabs button{position:relative;border:0;background-color:transparent;height:44px;padding:0 14px;border-radius:999px;font-size:13.5px;font-weight:600;color:var(--muted);display:flex;align-items:center;transition:background-color .4s ease,color .4s ease,padding .5s var(--out)}
+  .tabs button span.t{display:inline-block;white-space:nowrap;overflow:hidden;max-width:0;opacity:0;margin-left:0;transition:max-width .55s var(--out),opacity .35s ease,margin-left .55s var(--out)}
+  .tabs button.on{background-color:var(--ink);color:var(--bg);padding:0 16px}
+  .tabs button.on span.t{max-width:var(--w,120px);opacity:1;margin-left:8px;transition:max-width .55s var(--out),opacity .4s ease .1s,margin-left .55s var(--out)}
+  .tabs button:not(.on):hover{color:var(--ink)}
+  .tabs svg{flex:none}
+  .tabs .ub{position:absolute;top:3px;right:3px;min-width:17px;height:17px;font-size:10px;padding:0 4px}
+  .tabs .ub{transition:opacity .3s,transform .3s var(--out)}
+  .tabs button.on .ub{opacity:0;transform:scale(.5)}
+
+  /* ---------- sheets ---------- */
+  .scrim{position:fixed;inset:0;background:rgba(5,5,8,.66);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;z-index:50}
+  .scrim.show{display:flex;animation:fade .3s ease}
+  .scrim.closing{animation:fadeOut .32s ease forwards;pointer-events:none}
+  @keyframes fade{from{opacity:0}}
+  @keyframes fadeOut{to{opacity:0}}
+  .sheet{background:var(--bg);width:100%;max-width:480px;max-height:90vh;overflow:auto;border-radius:26px 26px 0 0;padding:10px 18px calc(24px + env(safe-area-inset-bottom));animation:up .5s var(--out);box-shadow:0 -1px 0 var(--line2)}
+  @keyframes up{from{transform:translateY(100%)}}
+  .scrim.closing .sheet{animation:down .32s cubic-bezier(.4,0,.8,.4) forwards}
+  @keyframes down{from{transform:none}to{transform:translateY(100%)}}
+  body.locked{overflow:hidden}
+  .grab{width:38px;height:5px;border-radius:9px;background:var(--line2);margin:0 auto 14px}
+  .sheet-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+  .sheet-head h3{font-size:22px;margin:0;font-weight:700;letter-spacing:-.02em}
+  .sheet .lede{margin-bottom:6px}
+  .choice{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--card);border:0;border-radius:18px;padding:16px;margin-top:10px;transition:box-shadow .2s,transform .14s var(--ease)}
+  .choice:hover{box-shadow:inset 0 0 0 1px var(--accent)}
+  .choice:active{transform:scale(.98)}
+  .choice .ic{width:44px;height:44px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--accent);display:grid;place-items:center;flex:none}
+  .choice b{display:block;font-size:15.5px;font-weight:600}
+  .choice small{color:var(--muted);font-size:13px}
+  .lvl-name{width:100%;background:none;border:0;outline:none;color:var(--ink);font-size:24px;font-weight:700;letter-spacing:-.02em;padding:4px 0}
+  .sheet-actions{display:flex;gap:8px;margin-top:22px}
+  .sheet-actions .btn{flex:1}
+
+  /* ---------- fake call / text ---------- */
+  .fakecall{position:fixed;inset:0;z-index:70;background:linear-gradient(180deg,#1b1a20,#0b0a0d);display:none;flex-direction:column;align-items:center;justify-content:space-between;padding:calc(70px + env(safe-area-inset-top)) 24px calc(60px + env(safe-area-inset-bottom))}
+  .fakecall.show{display:flex;animation:fade .3s}
+  .fakecall.closing{animation:fadeOut .35s ease forwards}
+  .fakecall .who{text-align:center;animation:rise .5s var(--ease) .1s both}
+  .fakecall .who b{display:block;font-size:34px;font-weight:600;letter-spacing:-.02em}
+  .fakecall .who small{color:var(--muted);font-size:15px}
+  .fc-av{width:96px;height:96px;border-radius:50%;background:#2b2a31;display:grid;place-items:center;font-size:38px;font-weight:600;margin:0 auto 18px;position:relative}
+  .fc-av:before,.fc-av:after{content:"";position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(244,239,232,.25);animation:wave 2s infinite}
+  .fc-av:after{animation-delay:1s}
+  @keyframes wave{to{transform:scale(1.8);opacity:0}}
+  .fc-btns{display:flex;gap:90px;animation:rise .5s var(--ease) .2s both}
+  .fc-btns button{width:72px;height:72px;border-radius:50%;border:0;display:grid;place-items:center}
+  .fc-btns span{display:block;text-align:center;font-size:13px;color:var(--muted);margin-top:8px}
+  .fakebanner{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top));z-index:70;width:calc(100% - 24px);max-width:440px;transform:translate(-50%,-140%);visibility:hidden;transition:transform .5s var(--spring);background:rgba(40,39,46,.94);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:20px;padding:12px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+  .fakebanner.show{transform:translate(-50%,0);visibility:visible}
+  .fakebanner .app-ic{width:38px;height:38px;border-radius:10px;background:#34c759;display:grid;place-items:center;flex:none}
+  .fakebanner b{display:block;font-size:14px}
+  .fakebanner small{color:var(--body);font-size:13.5px}
+
+  .toast{will-change:transform,opacity;position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(16px) scale(.96);background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:16px;font-size:13.5px;font-weight:500;max-width:calc(100% - 32px);width:max-content;opacity:0;pointer-events:none;transition:opacity .25s ease,transform .45s var(--out);z-index:60}
+  .toast b{font-weight:700}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
+
+  /* Launch animation (from the ORBITA splash design, plays once) */
+  #splash{position:fixed;inset:0;z-index:100;background:#050506;display:grid;place-items:center;overflow:hidden;transition:opacity .45s var(--ease)}
+  #splash.out{opacity:0;pointer-events:none}
+  .sp-box{position:relative;width:390px;height:844px;flex:none;font-family:Jost,system-ui,sans-serif;color:#F4F4F1}
+  .sp-cap{transform-box:fill-box;transform-origin:center;animation:spCap 4.5s cubic-bezier(.2,.7,.2,1) both}
+  .sp-arcB{stroke-dasharray:100;animation:spDrawB 4.5s ease-in-out both}
+  .sp-arcF{stroke-dasharray:100;animation:spDrawF 4.5s ease-in-out both}
+  .sp-ko{animation:spKo 4.5s linear both}
+  .sp-n1,.sp-n2,.sp-n3{transform-box:fill-box;transform-origin:center}
+  .sp-n1{animation:spPop1 4.5s cubic-bezier(.3,1.4,.5,1) both}
+  .sp-n2{animation:spPop2 4.5s cubic-bezier(.3,1.4,.5,1) both}
+  .sp-n3{animation:spPop3 4.5s cubic-bezier(.3,1.4,.5,1) both}
+  .sp-nb{transform-box:fill-box;transform-origin:center;animation:spPop3 4.5s cubic-bezier(.3,1.4,.5,1) both,spNb 4.5s linear both}
+  .sp-btn{animation:spBtn 4.5s linear both}
+  .sp-glow{animation:spGlow 4.5s ease-out both}
+  .sp-rip{opacity:0;transform-box:fill-box;transform-origin:center;animation:spRip 4.5s cubic-bezier(.1,.6,.3,1) both}
+  .sp-rip2{animation-delay:.18s}
+  .sp-wm{animation:spWm 4.5s cubic-bezier(.2,.7,.2,1) both}
+  @keyframes spCap{0%{opacity:0;transform:translateY(12px) scale(.96)}8%,100%{opacity:1;transform:translateY(0) scale(1)}}
+  @keyframes spDrawB{0%,5%{stroke-dashoffset:100;opacity:0}5.5%{opacity:1}17%,100%{stroke-dashoffset:0;opacity:1}}
+  @keyframes spDrawF{0%,13%{stroke-dashoffset:100;opacity:0}13.5%{opacity:1}25%,100%{stroke-dashoffset:0;opacity:1}}
+  @keyframes spKo{0%,19%{opacity:0}20%,100%{opacity:1}}
+  @keyframes spPop1{0%,24%{transform:scale(0)}28%{transform:scale(1.3)}30%,100%{transform:scale(1)}}
+  @keyframes spPop2{0%,28%{transform:scale(0)}32%{transform:scale(1.3)}34%,100%{transform:scale(1)}}
+  @keyframes spPop3{0%,32%{transform:scale(0)}36%{transform:scale(1.3)}38%,100%{transform:scale(1)}}
+  @keyframes spNb{0%,48%{opacity:0}51%,100%{opacity:1}}
+  @keyframes spBtn{0%,40%{opacity:0}41%,100%{opacity:1}}
+  @keyframes spGlow{0%,40%{opacity:0}45%{opacity:1}65%,100%{opacity:.55}}
+  @keyframes spRip{0%,40%{transform:scale(.25);opacity:0}41%{opacity:.9}58%,100%{transform:scale(1);opacity:0}}
+  @keyframes spWm{0%,50%{opacity:0;letter-spacing:.8em}64%,100%{opacity:1;letter-spacing:.42em}}
+
+  @media (prefers-reduced-motion:reduce){
+    *,*:before,*:after{animation:none!important;transition:none!important}
+    .sp-arcB,.sp-arcF{stroke-dasharray:none}
+  }
+</style>
+</head>
+<body class="booting">
+<div id="splash" aria-hidden="true">
+  <div class="sp-box" id="spBox">
+    <div class="sp-glow" style="position:absolute;left:-15px;top:170px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(51,102,255,.32) 0%,rgba(51,102,255,.10) 35%,rgba(51,102,255,0) 65%)"></div>
+    <svg viewBox="0 0 390 844" width="390" height="844" style="position:absolute;left:0;top:0">
+      <g fill="none" stroke="#3366FF">
+        <circle class="sp-rip" cx="195" cy="380" r="260" stroke-width="2" vector-effect="non-scaling-stroke"/>
+        <circle class="sp-rip sp-rip2" cx="195" cy="380" r="260" stroke-width="1.2" vector-effect="non-scaling-stroke"/>
+      </g>
+    </svg>
+    <svg viewBox="0 0 200 200" width="210" height="210" style="position:absolute;left:90px;top:275px">
+      <path class="sp-arcB" pathLength="100" transform="translate(100 100) rotate(-20)" d="M -88 0 A 88 30 0 0 1 88 0" fill="none" stroke="#F4F4F1" stroke-width="7" stroke-linecap="round"/>
+      <g class="sp-cap">
+        <rect x="83" y="25" width="34" height="150" rx="17" fill="#F4F4F1"/>
+        <rect x="94" y="84" width="12" height="32" rx="6" fill="#C9C9CE"/>
+        <rect class="sp-btn" x="94" y="84" width="12" height="32" rx="6" fill="#3366FF"/>
+      </g>
+      <g transform="translate(100 100) rotate(-20)" fill="none">
+        <path class="sp-ko" d="M 15.28 29.54 A 88 30 0 0 1 -35.79 27.41" stroke="#050506" stroke-width="17"/>
+        <path class="sp-arcF" pathLength="100" d="M 88 0 A 88 30 0 0 1 -88 0" stroke="#F4F4F1" stroke-width="7" stroke-linecap="round"/>
+        <circle class="sp-n1" cx="-82.7" cy="-10.3" r="10" fill="#F4F4F1" stroke="#050506" stroke-width="4"/>
+        <circle class="sp-n2" cx="-50.5" cy="24.6" r="10" fill="#F4F4F1" stroke="#050506" stroke-width="4"/>
+        <circle class="sp-n3" cx="85" cy="-7.8" r="10" fill="#F4F4F1" stroke="#050506" stroke-width="4"/>
+        <circle class="sp-nb" cx="85" cy="-7.8" r="10" fill="#3366FF" stroke="#050506" stroke-width="4"/>
+      </g>
+    </svg>
+    <div class="sp-wm" style="position:absolute;left:0;top:520px;width:390px;text-align:center;font-size:30px;font-weight:400;letter-spacing:.42em;padding-left:.42em;box-sizing:border-box;line-height:1">ORBITA</div>
+  </div>
+</div>
+
+<svg class="orbits" viewBox="0 0 1200 900" aria-hidden="true">
+  <g class="ring">
+    <ellipse cx="600" cy="420" rx="560" ry="260" fill="none" stroke="#f4efe8" stroke-opacity=".05" stroke-width="1.5" transform="rotate(-18 600 420)"/>
+    <ellipse cx="600" cy="420" rx="420" ry="190" fill="none" stroke="#f4efe8" stroke-opacity=".035" stroke-width="1.5" transform="rotate(-18 600 420)"/>
+  </g>
+</svg>
+
+<div class="app">
+  <header class="top">
+    <div class="brand"><div class="appicon" id="hdrIcon" aria-hidden="true"></div><b>ORBITA</b></div>
+    <button class="iconbtn" id="settingsBtn" aria-label="Settings">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f4efe8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+    </button>
+  </header>
+
+  <!-- ============ HOME ============ -->
+  <main class="view" id="v-home">
+    <div class="head">
+      <div class="eyebrow" id="homeEyebrow"></div>
+      <h1 class="title" id="homeTitle" style="margin-top:8px"></h1>
+    </div>
+
+    <section class="device">
+      <div class="device-top">
+        <div class="status"><span class="dot" id="dot"></span><span id="statusText"></span></div>
+        <button class="btn small acc" id="connectBtn"></button>
+      </div>
+      <div class="stage" id="stage">
+        <svg viewBox="0 0 360 236" aria-label="ORBITA bracelet prototype">
+          <defs>
+            <linearGradient id="strap" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a4852"/><stop offset="1" stop-color="#2c2b32"/></linearGradient>
+            <linearGradient id="podG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#26252b"/><stop offset="1" stop-color="#08080a"/></linearGradient>
+            <linearGradient id="podTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(255,255,255,.14)"/><stop offset=".5" stop-color="rgba(255,255,255,0)"/></linearGradient>
+            <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F2F2F4"/><stop offset=".5" stop-color="#B8BAC1"/><stop offset="1" stop-color="#7f838c"/></linearGradient>
+            <filter id="sh" x="-30%" y="-30%" width="160%" height="180%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#000" flood-opacity=".55"/></filter>
+          </defs>
+          <g transform="translate(0 -10)">
+          <ellipse cx="180" cy="224" rx="128" ry="11" fill="#000" opacity=".45"/>
+          <path d="M52 132 A128 66 0 0 1 308 132" fill="none" stroke="#232228" stroke-width="22" stroke-linecap="round"/>
+          <path d="M52 132 A128 66 0 0 0 308 132" fill="none" stroke="url(#strap)" stroke-width="24" stroke-linecap="round"/>
+          <path d="M60 140 A122 58 0 0 0 300 140" fill="none" stroke="#f4efe8" stroke-opacity=".12" stroke-width="1.5"/>
+          <rect x="171" y="58" width="18" height="14" rx="4" fill="#2b2a31"/>
+          <g class="socket">
+            <rect x="128" y="170" width="104" height="44" rx="16" fill="#111014"/>
+            <rect x="128" y="170" width="104" height="44" rx="16" fill="none" stroke="#5b8cff" stroke-opacity=".6" stroke-dasharray="4 4"/>
+            <circle cx="166" cy="192" r="3" fill="#C9A86A"/><circle cx="180" cy="192" r="3" fill="#C9A86A"/><circle cx="194" cy="192" r="3" fill="#C9A86A"/>
+          </g>
+          <g id="pod"><g id="podFloat" filter="url(#sh)">
+            <circle class="ripple" id="ripL" cx="121" cy="190" r="12"/>
+            <circle class="ripple" id="ripR" cx="239" cy="190" r="12"/>
+            <g class="hit" id="svgL" data-btn="left">
+              <rect x="100" y="166" width="30" height="48" fill="transparent"/>
+              <g class="btnshape"><rect class="metal" x="114" y="176" width="14" height="28" rx="5" fill="url(#metal)" stroke="#6e717a" stroke-width=".8"/><rect x="116.5" y="179" width="3" height="22" rx="1.5" fill="#fff" opacity=".55"/></g>
+            </g>
+            <g class="hit" id="svgR" data-btn="right">
+              <rect x="230" y="166" width="30" height="48" fill="transparent"/>
+              <g class="btnshape"><rect class="metal" x="232" y="176" width="14" height="28" rx="5" fill="url(#metal)" stroke="#6e717a" stroke-width=".8"/><rect x="240.5" y="179" width="3" height="22" rx="1.5" fill="#fff" opacity=".55"/></g>
+            </g>
+            <rect x="124" y="164" width="112" height="52" rx="19" fill="url(#podG)"/>
+            <rect x="124" y="164" width="112" height="52" rx="19" fill="url(#podTop)"/>
+            <rect x="124.5" y="164.5" width="111" height="51" rx="18.5" fill="none" stroke="#3a3940" stroke-width="1"/>
+            <g id="podMark" transform="translate(139 179) scale(.11)"></g>
+            <text x="164" y="194.5" fill="#f4efe8" font-family="Jost,sans-serif" font-weight="400" font-size="11.5" letter-spacing="3.6">ORBITA</text>
+            <circle id="led" cx="222" cy="174" r="2.2" fill="#3a3940"/>
+          </g></g>
+          <g font-family="Inter,sans-serif" font-size="9" font-weight="600" fill="#6d6974" letter-spacing="1.6">
+            <text x="96" y="193.5" text-anchor="end" id="lblL"></text>
+            <text x="264" y="193.5" id="lblR"></text>
+          </g>
+          </g>
+        </svg>
+      </div>
+      <div class="device-foot"><span id="tapHint"></span><button id="detachBtn"></button></div>
+    </section>
+
+    <div class="gtitle"><span class="eyebrow" data-i18n="secButtons"></span><button data-go="buttons" data-i18n="edit"></button></div>
+    <div class="group" id="homeButtons"></div>
+
+    <div class="gtitle"><span class="eyebrow" data-i18n="secEsc"></span><button data-go="esc" data-i18n="edit"></button></div>
+    <div class="group"><button class="row link" data-go="esc" id="homeEsc"></button></div>
+  </main>
+
+  <!-- ============ BUTTONS ============ -->
+  <main class="view" id="v-buttons" hidden>
+    <div class="head">
+      <h1 class="title" data-i18n="secButtons"></h1>
+      <p class="lede" data-i18n="buttonsSub"></p>
+    </div>
+    <div class="seg" id="sideSeg">
+      <span class="ind"></span>
+      <button data-side="left" class="on"><span class="bdg">L</span><span data-i18n="left"></span></button>
+      <button data-side="right"><span class="bdg">R</span><span data-i18n="right"></span></button>
+    </div>
+    <div id="btnForm"></div>
+  </main>
+
+  <!-- ============ ESCALATION ============ -->
+  <main class="view" id="v-esc" hidden>
+    <div class="head">
+      <div class="head-row">
+        <h1 class="title" data-i18n="secEsc"></h1>
+        <label class="switch" style="margin-bottom:4px"><input type="checkbox" id="escToggle"><span></span></label>
+      </div>
+      <p class="lede" data-i18n="escSub"></p>
+    </div>
+
+    <div id="escBody">
+      <section class="lvl-card">
+        <div class="lvl-now">
+          <div><span class="eyebrow" data-i18n="current"></span><b id="curLabel"></b></div>
+          <button class="btn small ghost" id="resetLvl" data-i18n="reset"></button>
+        </div>
+        <div class="meter" id="meter"></div>
+        <div class="lvl-actions">
+          <button class="btn ghost" id="simDown" data-i18n="testDown"></button>
+          <button class="btn acc" id="simUp" data-i18n="testUp"></button>
+        </div>
+      </section>
+
+      <div class="gtitle"><span class="eyebrow" data-i18n="levels"></span></div>
+      <div class="group" id="levels"></div>
+
+      <div class="gtitle"><span class="eyebrow" data-i18n="gestures"></span></div>
+      <div class="group" id="gestures"></div>
+      <div class="warnline" id="escWarn" data-i18n="escWarn"></div>
+
+      <div class="gtitle"><span class="eyebrow" data-i18n="deesc"></span></div>
+      <div class="group" id="stepMsgs"></div>
+      <p class="foot" data-i18n="stepHint"></p>
+
+      <div class="gtitle"><span class="eyebrow" data-i18n="defaultMsg"></span></div>
+      <div class="group">
+        <div class="row stack"><span class="lbl" data-i18n="downMsgLbl"></span><input class="rin" id="downMsg"></div>
+        <div class="row stack"><div class="chips" id="downPresets"></div></div>
+      </div>
+      <p class="foot" data-i18n="downMsgHint"></p>
+      <p class="foot" data-i18n="escNote" style="margin-top:14px"></p>
+    </div>
+  </main>
+
+  <!-- ============ CHATS ============ -->
+  <main class="view" id="v-chats" hidden>
+    <div class="head">
+      <h1 class="title" data-i18n="chatsTitle"></h1>
+      <p class="lede" data-i18n="chatsSub"></p>
+    </div>
+    <div class="group" id="chatList"></div>
+    <div class="group" style="margin-top:12px"><button class="row add link" id="inviteBtn" data-i18n="invite"></button></div>
+  </main>
+
+  <!-- ============ THREAD ============ -->
+  <main class="view" id="v-thread" hidden>
+    <div class="thread-head">
+      <button class="iconbtn" id="backBtn" aria-label="Back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f4efe8" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <div class="av" id="thAv"></div>
+      <div><b id="thName"></b><small data-i18n="inCircle"></small></div>
+    </div>
+    <div class="msgs" id="msgs"></div>
+  </main>
+</div>
+
+<div class="composer" id="composer">
+  <form id="sendForm">
+    <input id="msgInput" autocomplete="off">
+    <button class="send" aria-label="Send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0d0c10" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+  </form>
+</div>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="home" class="on"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><ellipse cx="12" cy="12" rx="9.5" ry="4" transform="rotate(-20 12 12)"/></svg><span class="t" data-i18n="tabHome"></span></button>
+  <button data-tab="buttons"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="8" y="3" width="8" height="18" rx="4"/><path d="M4 9v6M20 9v6"/></svg><span class="t" data-i18n="tabButtons"></span></button>
+  <button data-tab="esc"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M5 20v-4M10 20v-8M15 20v-12M20 20V4"/></svg><span class="t" data-i18n="tabEsc"></span></button>
+  <button data-tab="chats"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="t" data-i18n="tabChats"></span><span id="tabBadge"></span></button>
+</nav>
+
+<!-- Onboarding (asked once) -->
+<div class="scrim" id="onboard">
+  <div class="sheet" role="dialog" aria-modal="true">
+    <div class="grab"></div>
+    <div class="appicon lg" id="obIcon" aria-hidden="true" style="margin:6px 0 16px"></div>
+    <h3 style="font-size:28px;margin:0 0 6px;letter-spacing:-.03em" data-i18n="welcome"></h3>
+    <p class="lede" data-i18n="obSub"></p>
+    <button class="choice" data-mode="wearer">
+      <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f4efe8" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></div>
+      <div><b data-i18n="obW"></b><small data-i18n="obWs"></small></div>
+    </button>
+    <button class="choice" data-mode="guardian">
+      <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f4efe8" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.6"/><path d="M2.5 20c1-3.4 3.2-5.2 5.5-5.2s4.5 1.8 5.5 5.2M14 15.2c.9-.6 1.9-.9 3-.9 2.2 0 3.9 1.6 4.6 4.7"/></svg></div>
+      <div><b data-i18n="obG"></b><small data-i18n="obGs"></small></div>
+    </button>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="scrim" id="settingsSheet">
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="sheet-head"><h3 data-i18n="settings"></h3><button class="btn small" data-close data-i18n="done"></button></div>
+    <div id="settingsBody"></div>
+  </div>
+</div>
+
+<!-- Level editor -->
+<div class="scrim" id="levelSheet">
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="sheet-head"><span class="eyebrow" id="lvlEyebrow"></span><button class="btn small" data-close data-i18n="done"></button></div>
+    <div id="levelBody"></div>
+  </div>
+</div>
+
+<!-- Add contact -->
+<div class="scrim" id="contactSheet">
+  <form class="sheet" id="contactForm">
+    <div class="grab"></div>
+    <div class="sheet-head"><h3 data-i18n="addContact"></h3></div>
+    <p class="lede" data-i18n="acSub" style="margin-bottom:16px"></p>
+    <div class="group">
+      <label class="row stack"><span class="lbl" data-i18n="name"></span><input class="rin" id="cName" required placeholder="Sarah"></label>
+      <label class="row stack"><span class="lbl" data-i18n="phoneInvite"></span><input class="rin" id="cPhone" type="tel" placeholder="+32 4xx xx xx xx"></label>
+    </div>
+    <div class="sheet-actions">
+      <button type="button" class="btn ghost" id="cCancel" data-i18n="cancel"></button>
+      <button type="submit" class="btn acc" data-i18n="addBtn"></button>
+    </div>
+  </form>
+</div>
+
+<!-- Bluetooth help -->
+<div class="scrim" id="btSheet">
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="sheet-head"><h3 data-i18n="btTitle"></h3></div>
+    <p class="lede" id="btReason"></p>
+    <p class="foot" data-i18n="btInfo" style="margin:12px 0 0"></p>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="btClose" data-i18n="close"></button>
+      <button class="btn acc" id="btDemo" data-i18n="useDemo"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Fake call / fake text (local only) -->
+<div class="fakecall" id="fakeCall">
+  <div class="who"><div class="fc-av" id="fcAv"></div><b id="fcName"></b><small data-i18n="mobile"></small></div>
+  <div class="fc-btns">
+    <div><button style="background:#ff3b30" data-fc aria-label="Decline"><svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><path d="M12 9c-3.2 0-6.2.8-8.6 2.3-.6.4-.8 1.2-.4 1.8l1.3 2c.4.6 1.1.8 1.7.5l2.4-1.1c.5-.2.8-.7.8-1.3v-1.6c1.8-.5 3.8-.5 5.6 0v1.6c0 .6.3 1.1.8 1.3l2.4 1.1c.6.3 1.3.1 1.7-.5l1.3-2c.4-.6.2-1.4-.4-1.8C18.2 9.8 15.2 9 12 9z"/></svg></button><span data-i18n="decline"></span></div>
+    <div><button style="background:#34c759" data-fc aria-label="Accept"><svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg></button><span data-i18n="accept"></span></div>
+  </div>
+</div>
+<div class="fakebanner" id="fakeText">
+  <div class="app-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M12 3C6.5 3 2 6.6 2 11c0 2.4 1.3 4.6 3.4 6L5 21l4.2-2.3c.9.2 1.8.3 2.8.3 5.5 0 10-3.6 10-8s-4.5-8-10-8z"/></svg></div>
+  <div><b id="ftName"></b><small id="ftText"></small></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   ORBITA prototype
+   Alerts go to contacts' ORBITA chats (push notifications in
+   the real app). The app never calls 112 or sends SMS itself.
+
+   Bluetooth contract for the prototype firmware (ESP32 / nRF etc.)
+   Service ORBITA_SERVICE, characteristic ORBITA_EVENT (notify, 1 byte):
+     0x01 left hold 2s   0x02 right hold 2s   0x11 left double  0x12 right double
+     0x21 left triple    0x22 right triple    0x31 left hold 5s 0x32 right hold 5s
+   Battery: standard battery_service / battery_level
+   ========================================================= */
+const ORBITA_SERVICE = '6e400001-b5a3-f393-e0a9-0b0b17a0b175';
+const ORBITA_EVENT   = '6e400002-b5a3-f393-e0a9-0b0b17a0b175';
+
+const I18N = {
+  en:{
+    tagline:"The quiet safety bracelet", homeW:"Your bracelet<i>.</i>", homeG:"Their bracelet<i>.</i>",
+    st_off:"Not connected", st_search:"Searching…", st_connecting:"Connecting…", st_on:"Connected", st_demo:"Demo bracelet", st_disc:"Disconnected",
+    connect:"Connect", disconnect:"Disconnect", L:"LEFT", R:"RIGHT", tapHint:"Tap a button on the bracelet to test it", detach:"Detach core", attach:"Attach core",
+    secButtons:"Buttons", edit:"Edit", buttonsSub:"Hold a button for 2 seconds to trigger its action.",
+    leftBtn:"Left button", rightBtn:"Right button", left:"Left", right:"Right", hold2s:"Hold 2 s",
+    whenPressed:"When pressed", optContact:"Contact someone", optCustom:"Custom",
+    who:"Who", how:"How", message:"Message", msgPh:"What should they see?",
+    nameAction:"Name", namePh:"e.g. Way out", action:"Action", textPh:"Text shown on screen",
+    callerName:"Caller shown", senderName:"Sender shown", callerPh:"Mum", addNew:"+ Add to circle…", customDefault:"Custom action",
+    m_alert:"Send an alert", m_location:"Share live location", m_alertloc:"Alert + live location", m_callme:"Ask them to call me",
+    c_fakecall:"Fake incoming call", c_faketext:"Fake text notification", c_custom:"Custom alert",
+    fakeNote:"Shown on this phone only — nothing is sent.", testBtn:"Test this button", preview:"What happens",
+    secEsc:"Escalation", escSub:"Step the alert level up or down from the bracelet. Each level notifies the people you choose.",
+    escOffSub:"Off", levelsN:n=>`${n} levels`, current:"Current level", idle:"Idle", reset:"Reset",
+    testDown:"▼ Down", testUp:"▲ Up", levels:"Levels", gestures:"Gestures", deesc:"Step-down messages",
+    upWith:"Step up", downWith:"Step down", escWarn:"Step up and step down use the same gesture — pick a different one for each.",
+    g_double:"Double press", g_triple:"Triple press", g_hold5:"Hold 5 s",
+    escNote:"ORBITA never calls emergency services itself. On levels with the 112 option, your contacts get a one-tap button to call — they decide.",
+    addLevel:"+ Add level", level:"Level", levelName:"Level name", contactWho:"Who is notified", whatHappens:"They receive",
+    ifNobody:"If nobody responds", stay:"Stay on this level", autoAfter:m=>`Step up after ${m} min`, show112:"Offer contacts a “Call 112” button",
+    colour:"Colour", moveUp:"Move up", moveDown:"Move down", del:"Delete level", nobody:"nobody yet", add:"+ Add",
+    downMsgLbl:"Used when a level has no message of its own", downMsgHint:"Step-down messages go to everyone who was already alerted.",
+    stepHint:"Tap a step to write what your contacts receive when you leave that level.", defaultMsg:"Default message",
+    downTo:n=>n ? `When stepping down to level ${n}` : "When stepping back to idle", downOwnPh:"Uses the default message", usesDefault:"Default message", toIdle:"idle",
+    dmDefaults:["Never mind — false alarm.","Getting better.","I think I'm in the clear now."], downDefault:"False alarm — I'm OK.",
+    presets:["False alarm — I'm OK.","Never mind, all good now.","I'm safe, no need to worry."], backNormal:"Back to normal",
+    escOn:"Escalation on", escOff:"Escalation off", keepOne:"Keep at least one level", removed:"Removed",
+    resetToast:"Level reset", escIsOff:"Escalation is off", highest:"Already at the highest level", alreadyIdle:"Already idle",
+    notAssigned:"not assigned", added:"added to your circle", sentTo:"Sent to",
+    demoConnected:"Demo bracelet connected", connectedTo:"Connected to", noService:"Connected — no ORBITA button service on this device yet", btDisc:"Bracelet disconnected",
+    welcome:"Welcome to ORBITA.", obSub:"Who wears the bracelet?",
+    obW:"I have a bracelet", obWs:"I'll wear it and set up my own buttons", obG:"A family member or friend has one", obGs:"I'm setting it up for someone else",
+    addContact:"Add to circle", acSub:"They get an invite to install ORBITA. Alerts reach them as notifications and in your chat.",
+    name:"Name", phoneInvite:"Phone (for the invite)", cancel:"Cancel", addBtn:"Add",
+    btTitle:"Bluetooth isn't available here", btNoSupport:"This browser doesn't support Web Bluetooth.", btBlocked:"Bluetooth is blocked inside this preview window.", btFail:"Couldn't connect: ",
+    btInfo:"Web Bluetooth works in <b>Chrome on Android</b> (and desktop Chrome/Edge) when the app is opened from its own web address. iPhone browsers don't support it yet — the native iOS app will.",
+    close:"Close", useDemo:"Use demo bracelet",
+    tabHome:"Home", tabButtons:"Buttons", tabEsc:"Escalation", tabChats:"Chats",
+    chatsTitle:"Chats", chatsSub:"Bracelet alerts arrive here, next to your messages.", invite:"+ Add to circle", inCircle:"In your circle",
+    typePh:"Message", alertLbl:"ORBITA alert", liveLoc:"Live location", callMe:"Please call me", call112:"Call 112",
+    call112Toast:"On their phone this opens the dialer with 112 — they confirm the call.", noMsgs:"No messages yet", today:"Today",
+    mobile:"mobile", decline:"Decline", accept:"Accept",
+    settings:"Settings", done:"Done", language:"Language", wearer:"Who wears it", wearerMe:"Me", wearerOther:"Someone I care about",
+    device:"Device", battery:"Battery", notConnected:"Not connected", resetDemo:"Reset prototype data", resetConfirm:"Tap again to reset", about:"Prototype · settings are saved on this device"
+  },
+  fr:{
+    tagline:"Le bracelet de sécurité discret", homeW:"Votre bracelet<i>.</i>", homeG:"Le bracelet de votre proche<i>.</i>",
+    st_off:"Non connecté", st_search:"Recherche…", st_connecting:"Connexion…", st_on:"Connecté", st_demo:"Bracelet démo", st_disc:"Déconnecté",
+    connect:"Connecter", disconnect:"Déconnecter", L:"GAUCHE", R:"DROITE", tapHint:"Touchez un bouton du bracelet pour tester", detach:"Détacher", attach:"Rattacher",
+    secButtons:"Boutons", edit:"Modifier", buttonsSub:"Maintenez un bouton 2 secondes pour lancer son action.",
+    leftBtn:"Bouton gauche", rightBtn:"Bouton droit", left:"Gauche", right:"Droit", hold2s:"Appui 2 s",
+    whenPressed:"Quand on appuie", optContact:"Contacter quelqu'un", optCustom:"Personnalisé",
+    who:"Qui", how:"Comment", message:"Message", msgPh:"Que doit-on voir ?",
+    nameAction:"Nom", namePh:"ex. Porte de sortie", action:"Action", textPh:"Texte affiché à l'écran",
+    callerName:"Appelant affiché", senderName:"Expéditeur affiché", callerPh:"Maman", addNew:"+ Ajouter au cercle…", customDefault:"Action personnalisée",
+    m_alert:"Envoyer une alerte", m_location:"Partager la position", m_alertloc:"Alerte + position", m_callme:"Demander de me rappeler",
+    c_fakecall:"Faux appel entrant", c_faketext:"Fausse notification", c_custom:"Alerte personnalisée",
+    fakeNote:"Affiché sur ce téléphone uniquement — rien n'est envoyé.", testBtn:"Tester ce bouton", preview:"Ce qui se passe",
+    secEsc:"Escalade", escSub:"Montez ou descendez le niveau d'alerte depuis le bracelet. Chaque niveau prévient les personnes choisies.",
+    escOffSub:"Désactivée", levelsN:n=>`${n} niveaux`, current:"Niveau actuel", idle:"Au repos", reset:"Réinitialiser",
+    testDown:"▼ Descendre", testUp:"▲ Monter", levels:"Niveaux", gestures:"Gestes", deesc:"Messages de descente",
+    upWith:"Monter", downWith:"Descendre", escWarn:"Monter et descendre utilisent le même geste — choisissez-en un différent pour chacun.",
+    g_double:"Double appui", g_triple:"Triple appui", g_hold5:"Appui 5 s",
+    escNote:"ORBITA n'appelle jamais les secours elle-même. Aux niveaux avec l'option 112, vos contacts reçoivent un bouton pour appeler en un geste — ce sont eux qui décident.",
+    addLevel:"+ Ajouter un niveau", level:"Niveau", levelName:"Nom du niveau", contactWho:"Qui est prévenu", whatHappens:"Ils reçoivent",
+    ifNobody:"Sans réponse", stay:"Rester à ce niveau", autoAfter:m=>`Monter après ${m} min`, show112:"Proposer un bouton « Appeler le 112 »",
+    colour:"Couleur", moveUp:"Monter", moveDown:"Descendre", del:"Supprimer le niveau", nobody:"personne pour l'instant", add:"+ Ajouter",
+    downMsgLbl:"Utilisé quand un niveau n'a pas son propre message", downMsgHint:"Les messages de descente sont envoyés à toutes les personnes déjà alertées.",
+    stepHint:"Touchez une étape pour écrire ce que vos contacts reçoivent quand vous quittez ce niveau.", defaultMsg:"Message par défaut",
+    downTo:n=>n ? `En descendant au niveau ${n}` : "En revenant au repos", downOwnPh:"Utilise le message par défaut", usesDefault:"Message par défaut", toIdle:"repos",
+    dmDefaults:["Laisse tomber, fausse alerte.","Ça va mieux.","Je pense que je suis hors de danger."], downDefault:"Fausse alerte — tout va bien.",
+    presets:["Fausse alerte — tout va bien.","Laisse tomber, tout va bien maintenant.","Je suis en sécurité, pas d'inquiétude."], backNormal:"Retour à la normale",
+    escOn:"Escalade activée", escOff:"Escalade désactivée", keepOne:"Gardez au moins un niveau", removed:"Supprimé",
+    resetToast:"Niveau réinitialisé", escIsOff:"L'escalade est désactivée", highest:"Déjà au niveau maximum", alreadyIdle:"Déjà au repos",
+    notAssigned:"non attribué", added:"ajouté au cercle", sentTo:"Envoyé à",
+    demoConnected:"Bracelet démo connecté", connectedTo:"Connecté à", noService:"Connecté — pas encore de service ORBITA sur cet appareil", btDisc:"Bracelet déconnecté",
+    welcome:"Bienvenue sur ORBITA.", obSub:"Qui porte le bracelet ?",
+    obW:"J'ai un bracelet", obWs:"Je le porte et je configure mes boutons", obG:"Un proche en a un", obGs:"Je le configure pour quelqu'un d'autre",
+    addContact:"Ajouter au cercle", acSub:"La personne reçoit une invitation à installer ORBITA. Les alertes lui arrivent en notification et dans votre discussion.",
+    name:"Nom", phoneInvite:"Téléphone (pour l'invitation)", cancel:"Annuler", addBtn:"Ajouter",
+    btTitle:"Bluetooth n'est pas disponible ici", btNoSupport:"Ce navigateur ne prend pas en charge Web Bluetooth.", btBlocked:"Bluetooth est bloqué dans cette fenêtre d'aperçu.", btFail:"Connexion impossible : ",
+    btInfo:"Web Bluetooth fonctionne dans <b>Chrome sur Android</b> (et Chrome/Edge sur ordinateur) quand l'app est ouverte depuis sa propre adresse web. Les navigateurs iPhone ne le prennent pas encore en charge — l'app iOS native le fera.",
+    close:"Fermer", useDemo:"Utiliser le bracelet démo",
+    tabHome:"Accueil", tabButtons:"Boutons", tabEsc:"Escalade", tabChats:"Discussions",
+    chatsTitle:"Discussions", chatsSub:"Les alertes du bracelet arrivent ici, à côté de vos messages.", invite:"+ Ajouter au cercle", inCircle:"Dans votre cercle",
+    typePh:"Message", alertLbl:"Alerte ORBITA", liveLoc:"Position en direct", callMe:"Rappelle-moi stp", call112:"Appeler le 112",
+    call112Toast:"Sur son téléphone, cela ouvre le clavier avec le 112 — la personne confirme l'appel.", noMsgs:"Aucun message", today:"Aujourd'hui",
+    mobile:"mobile", decline:"Refuser", accept:"Accepter",
+    settings:"Réglages", done:"OK", language:"Langue", wearer:"Qui le porte", wearerMe:"Moi", wearerOther:"Un proche",
+    device:"Appareil", battery:"Batterie", notConnected:"Non connecté", resetDemo:"Réinitialiser les données", resetConfirm:"Touchez encore pour confirmer", about:"Prototype · réglages enregistrés sur cet appareil"
+  }
+};
+
+const LANG_KEY = 'orbita-lang';
+let lang; try { lang = localStorage.getItem(LANG_KEY); } catch(e){}
+if (!I18N[lang]) lang = /^fr/i.test(navigator.language || '') ? 'fr' : 'en';
+let T = I18N[lang];
+
+const COLORS = ['#5b8cff','#d8c9b3','#b58ad8','#f0a35b','#ff6b6b','#6fd6a8'];
+const uid = () => Math.random().toString(36).slice(2,9);
+
+const DEFAULT = () => {
+  const fr = lang === 'fr', now = Date.now();
+  return {
+    mode:null,
+    contacts:[{id:'c1', name:fr?'Maman':'Mum', phone:''},{id:'c2', name:fr?'Papa':'Dad', phone:''},{id:'c3', name:'Sarah', phone:''}],
+    chats:{
+      c1:[{k:'them', text:fr?'Tu rentres pour le dîner ?':'Home for dinner?', t:now-36e5},{k:'me', text:fr?'Oui, vers 19h':'Yes, around 7', t:now-35e5}],
+      c2:[], c3:[{k:'them', text:fr?'On se voit samedi ?':'Still on for Saturday?', t:now-72e5}]
+    },
+    unread:{}, notified:[],
+    buttons:{
+      left:{type:'contact', contactId:'c1', method:'alertloc', message:fr?"J'ai besoin de toi.":'I need you.', cLabel:'', cAction:'fakecall', cName:'', cMessage:'', cContactId:'c1'},
+      right:{type:'custom', contactId:'c3', method:'alert', message:'', cLabel:fr?'Porte de sortie':'Way out', cAction:'fakecall', cName:fr?'Maman':'Mum', cMessage:'', cContactId:'c1'}
+    },
+    esc:{
+      enabled:true, upBtn:'right', upGes:'double', downBtn:'left', downGes:'double', downMsg:T.downDefault,
+      levels:[
+        {id:uid(), name:fr?'Prise de nouvelles':'Check-in', color:COLORS[0], contacts:['c3'], action:'callme', message:'', auto:0, sos:false},
+        {id:uid(), name:fr?"Mal à l'aise":'Uneasy', color:COLORS[1], contacts:['c1','c3'], action:'alertloc', message:fr?'Je ne me sens pas en sécurité.':"I don't feel safe.", auto:10, sos:false},
+        {id:uid(), name:'Urgent', color:COLORS[3], contacts:['c1','c2'], action:'alertloc', message:fr?'Urgent — appelle-moi.':'Urgent — call me.', auto:5, sos:false},
+        {id:uid(), name:fr?'Urgence':'Emergency', color:COLORS[4], contacts:['c1','c2','c3'], action:'alertloc', message:fr?"URGENCE. J'ai besoin d'aide maintenant.":'EMERGENCY. I need help now.', auto:0, sos:true}
+      ]
+    },
+    current:0
+  };
+};
+
+const KEY = 'orbita-proto-v3';
+let S; try { S = JSON.parse(localStorage.getItem(KEY)) || DEFAULT(); } catch(e){ S = DEFAULT(); }
+function migrate(){
+  if (S.esc.downMsg == null) S.esc.downMsg = T.downDefault;
+  S.esc.levels.forEach((l,i) => { if (l.downMsg == null) l.downMsg = i === 0 ? '' : (T.dmDefaults[i-1] || ''); });
+  if (!Array.isArray(S.notified)) S.notified = [];
+}
+migrate();
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} };
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const cName = id => (S.contacts.find(c => c.id === id) || {}).name || '?';
+const BTN = side => side==='left' ? T.leftBtn : T.rightBtn;
+const AVC = ['#5b8cff','#d8c9b3','#b58ad8','#6fd6a8','#f0a35b'];
+const avColor = id => AVC[[...id].reduce((a,c)=>a+c.charCodeAt(0),0) % AVC.length];
+const hhmm = t => new Date(t).toLocaleTimeString(lang, {hour:'2-digit', minute:'2-digit'});
+const CHEV = '<svg class="chev" width="8" height="13" viewBox="0 0 8 13"><path d="M1.5 1.5l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const METHODS = ['alert','alertloc','location','callme'];
+const CUSTOMS = ['fakecall','faketext','custom'];
+const GES = ['double','triple','hold5'];
+const hasText = m => m === 'alert' || m === 'alertloc';
+
+/* A list row with a native picker laid over it (clean, works great on phones) */
+function selRow(label, key, options, value, attrs=''){
+  const cur = options.find(o => o[0] === value);
+  return `<div class="row link"><span class="k">${label}</span><span class="v">${esc(cur ? cur[1] : '')}</span>${CHEV}
+    <select class="ov" data-k="${key}" ${attrs} aria-label="${esc(label)}">${options.map(([v,l]) => `<option value="${esc(v)}" ${v===value?'selected':''}>${esc(l)}</option>`).join('')}</select></div>`;
+}
+function inRow(label, key, value, ph=''){
+  return `<label class="row stack"><span class="lbl">${label}</span><input class="rin" data-k="${key}" value="${esc(value)}" placeholder="${esc(ph)}"></label>`;
+}
+const contactOpts = () => [...S.contacts.map(c => [c.id, c.name]), ['__new', T.addNew]];
+
+let tt;
+function toast(msg){
+  const t = $('#toast'); t.classList.remove('show'); void t.offsetWidth;
+  t.innerHTML = msg; t.classList.add('show');
+  clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 3000);
+}
+const sheetTimers = {};
+function syncLock(){ document.body.classList.toggle('locked', !!document.querySelector('.scrim.show:not(.closing)')); }
+function openSheet(id){
+  const sc = $(id); clearTimeout(sheetTimers[id]);
+  sc.classList.remove('closing'); sc.classList.add('show'); syncLock();
+}
+function closeSheet(id){
+  const sc = $(id); if (!sc.classList.contains('show') || sc.classList.contains('closing')) return;
+  if (document.activeElement && sc.contains(document.activeElement)) document.activeElement.blur();
+  sc.classList.add('closing'); syncLock();
+  sheetTimers[id] = setTimeout(() => { sc.classList.remove('show','closing'); syncLock(); }, 320);
+}
+document.querySelectorAll('.scrim').forEach(sc => sc.addEventListener('click', e => {
+  if ((e.target === sc && sc.id !== 'onboard') || e.target.closest('[data-close]')) closeSheet('#'+sc.id);
+}));
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if ($('#fakeCall').classList.contains('show')) return closeFakeCall();
+  const open = [...document.querySelectorAll('.scrim.show:not(.closing)')].filter(s => s.id !== 'onboard').pop();
+  if (open) closeSheet('#'+open.id);
+});
+
+/* ---------- logo mark ---------- */
+function markSVG({bg='#0A0A0B', small=false, nodes=true, orbit=false, blue=true, inner=false}={}){
+  const sw = small ? 12 : 7, r = small ? 16 : 10, ko = small ? 24 : 17;
+  const rot = 'translate(100 100) rotate(-20)';
+  const path = 'M 88 0 A 88 30 0 0 1 -88 0 A 88 30 0 0 1 88 0';
+  const dot = vis => `<circle r="${r}" fill="#3366FF" stroke="${bg}" stroke-width="4"><animateMotion dur="6s" repeatCount="indefinite" path="${path}"/><animate attributeName="opacity" dur="6s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.5" values="${vis}"/></circle>`;
+  const body = `<path transform="${rot}" d="M -88 0 A 88 30 0 0 1 88 0" fill="none" stroke="#F4F4F1" stroke-width="${sw}" stroke-linecap="round"/>
+    ${orbit ? `<g transform="${rot}">${dot('0;1')}</g>` : ''}
+    <rect x="83" y="25" width="34" height="150" rx="17" fill="#F4F4F1"/><rect x="94" y="84" width="12" height="32" rx="6" fill="#3366FF"/>
+    <g transform="${rot}" fill="none">
+      <path d="M 15.28 29.54 A 88 30 0 0 1 -35.79 27.41" stroke="${bg}" stroke-width="${ko}"/>
+      <path d="M 88 0 A 88 30 0 0 1 -88 0" stroke="#F4F4F1" stroke-width="${sw}" stroke-linecap="round"/>
+      ${nodes ? `<circle cx="-82.7" cy="-10.3" r="10" fill="#F4F4F1" stroke="${bg}" stroke-width="4"/><circle cx="-50.5" cy="24.6" r="10" fill="#F4F4F1" stroke="${bg}" stroke-width="4"/>` : ''}
+      ${orbit ? dot('1;0') : (blue ? `<circle cx="85" cy="-7.8" r="${r}" fill="#3366FF" stroke="${bg}" stroke-width="4"/>` : '')}
+    </g>`;
+  return inner ? body : `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
+}
+$('#hdrIcon').innerHTML = markSVG({small:true, nodes:false, orbit:true});
+$('#obIcon').innerHTML = markSVG({orbit:true});
+$('#podMark').innerHTML = markSVG({bg:'#141318', small:true, nodes:false, blue:false, inner:true});
+(function setIcons(){
+  const tile = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" rx="44" fill="#0A0A0B"/><g transform="translate(20 20) scale(.8)">${markSVG({inner:true})}</g></svg>`;
+  const url = 'data:image/svg+xml,' + encodeURIComponent(tile);
+  $('#favicon').href = url;
+  try { const img = new Image(); img.onload = () => { try { const c = document.createElement('canvas'); c.width = c.height = 180;
+    c.getContext('2d').drawImage(img, 0, 0, 180, 180); $('#touchicon').href = c.toDataURL('image/png'); } catch(e){} }; img.src = url; } catch(e){}
+})();
+
+/* ---------- views & tab bar ---------- */
+let view = 'home', thread = null, navToken = 0;
+const ORDER = ['home','buttons','esc','chats','thread'];
+function show(v){
+  if (v === view) return;
+  const tok = ++navToken, old = $('#v-'+view);
+  view = v;
+  $('#tabs').classList.toggle('hide', v === 'thread');
+  $('#composer').classList.toggle('show', v === 'thread');
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === (v === 'thread' ? 'chats' : v)));
+  old.classList.add('leaving');
+  setTimeout(() => {
+    if (tok !== navToken) return;
+    ORDER.forEach(id => { const el = $('#v-'+id); el.hidden = true; el.classList.remove('enter','leaving'); });
+    const el = $('#v-'+v); el.hidden = false; void el.offsetWidth; el.classList.add('enter');
+    window.scrollTo({top: v === 'thread' ? document.body.scrollHeight : 0});
+    if (v === 'buttons') moveSeg(true);
+  }, 160);
+}
+// each tab label grows to exactly its own width, so the bar resizes smoothly with no overshoot
+function moveTabPill(){ document.querySelectorAll('.tabs span.t').forEach(t => t.style.setProperty('--w', t.scrollWidth + 'px')); }
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => show(b.dataset.tab));
+document.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g) show(g.dataset.go); });
+
+/* ---------- home ---------- */
+function shortSummary(b){
+  if (b.type === 'contact') return `${T['m_'+b.method]} · ${cName(b.contactId)}`;
+  if (b.cAction === 'custom') return `${b.cLabel || T.customDefault} · ${cName(b.cContactId)}`;
+  return `${b.cLabel || T.customDefault} · ${T['c_'+b.cAction]}`;
+}
+function renderHome(){
+  const g = S.mode === 'guardian';
+  $('#homeEyebrow').textContent = T.tagline;
+  $('#homeTitle').innerHTML = g ? T.homeG : T.homeW;
+  $('#lblL').textContent = T.L; $('#lblR').textContent = T.R;
+  $('#tapHint').textContent = T.tapHint;
+  $('#detachBtn').textContent = $('#stage').classList.contains('detached') ? T.attach : T.detach;
+  $('#homeButtons').innerHTML = ['left','right'].map(side => `
+    <button class="row link" data-edit="${side}" id="home-${side}">
+      <span class="bdg">${side==='left'?'L':'R'}</span>
+      <span class="k">${BTN(side)}<small>${esc(shortSummary(S.buttons[side]))}</small></span>${CHEV}
+    </button>`).join('');
+  const L = S.esc.levels;
+  const sub = S.esc.enabled ? `${T.levelsN(L.length)} · ${S.current ? `${T.level} ${S.current} · ${L[S.current-1].name}` : T.idle}` : T.escOffSub;
+  $('#homeEsc').innerHTML = `<span class="k">${T.current}<small>${esc(sub)}</small></span>
+    <span class="mini-meter">${L.map((l,i) => `<i style="background:${S.esc.enabled && i < S.current ? l.color : ''}"></i>`).join('')}</span>${CHEV}`;
+}
+$('#homeButtons').addEventListener('click', e => { const r = e.target.closest('[data-edit]'); if (r){ side = r.dataset.edit; renderButtonsView(); show('buttons'); } });
+$('#detachBtn').onclick = () => { const d = $('#stage').classList.toggle('detached'); $('#detachBtn').textContent = d ? T.attach : T.detach; };
+
+/* ---------- buttons view ---------- */
+let side = 'left';
+function placeInd(seg, instant){
+  const on = seg.querySelector('button.on'), ind = seg.querySelector('.ind');
+  if (!on || !on.offsetWidth) return;
+  if (instant || !ind.dataset.placed) ind.style.transition = 'none';
+  ind.style.width = on.offsetWidth + 'px'; ind.style.transform = `translateX(${on.offsetLeft - 4}px)`;
+  if (ind.style.transition === 'none'){ void ind.offsetWidth; ind.style.transition = ''; }
+  ind.dataset.placed = 1;
+}
+function moveSeg(instant){ placeInd($('#sideSeg'), instant); }
+$('#sideSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || b.dataset.side === side) return;
+  side = b.dataset.side; renderButtonsView(true);
+});
+function longSummary(b){
+  if (b.type === 'contact') return `${T['m_'+b.method]} → <b>${esc(cName(b.contactId))}</b>${hasText(b.method) && b.message ? ` · “${esc(b.message)}”` : ''}`;
+  if (b.cAction === 'custom') return `<b>${esc(b.cLabel || T.customDefault)}</b> → ${esc(cName(b.cContactId))}${b.cMessage ? ` · “${esc(b.cMessage)}”` : ''}`;
+  return `<b>${esc(b.cLabel || T.customDefault)}</b> · ${T['c_'+b.cAction]}. ${T.fakeNote}`;
+}
+function renderButtonsView(animate){
+  document.querySelectorAll('#sideSeg button').forEach(x => x.classList.toggle('on', x.dataset.side === side));
+  moveSeg();
+  const b = S.buttons[side], isC = b.type === 'contact';
+  let rows = selRow(T.whenPressed, 'type', [['contact',T.optContact],['custom',T.optCustom]], b.type);
+  let rows2 = '';
+  if (isC){
+    rows2 = selRow(T.who, 'contactId', contactOpts(), b.contactId) + selRow(T.how, 'method', METHODS.map(m => [m, T['m_'+m]]), b.method)
+      + (hasText(b.method) ? inRow(T.message, 'message', b.message, T.msgPh) : '');
+  } else {
+    rows2 = inRow(T.nameAction, 'cLabel', b.cLabel, T.namePh) + selRow(T.action, 'cAction', CUSTOMS.map(c => [c, T['c_'+c]]), b.cAction);
+    if (b.cAction === 'fakecall') rows2 += inRow(T.callerName, 'cName', b.cName, T.callerPh);
+    if (b.cAction === 'faketext') rows2 += inRow(T.senderName, 'cName', b.cName, T.callerPh) + inRow(T.message, 'cMessage', b.cMessage, T.textPh);
+    if (b.cAction === 'custom') rows2 += selRow(T.who, 'cContactId', contactOpts(), b.cContactId) + inRow(T.message, 'cMessage', b.cMessage, T.msgPh);
+  }
+  $('#btnForm').innerHTML = `
+    <div style="${animate ? 'animation:rise .35s var(--ease) both' : ''}">
+      <div class="gtitle"><span class="eyebrow">${BTN(side)} · ${T.hold2s}</span></div>
+      <div class="group">${rows}</div>
+      <div class="group" style="margin-top:12px">${rows2}</div>
+      <div class="gtitle"><span class="eyebrow">${T.preview}</span></div>
+      <div class="group"><div class="row"><span class="k" style="font-weight:400;color:var(--body);font-size:14px" id="btnSummary">${longSummary(b)}</span></div></div>
+      <button class="btn ghost full" id="testBtn" style="margin-top:14px">${T.testBtn}</button>
+    </div>`;
+}
+$('#btnForm').addEventListener('change', e => {
+  const k = e.target.dataset.k; if (!k || e.target.tagName !== 'SELECT') return;
+  if (e.target.value === '__new'){ openAddContact(c => { S.buttons[side][k] = c.id; save(); renderButtonsView(); renderHome(); }); renderButtonsView(); return; }
+  S.buttons[side][k] = e.target.value; save(); renderButtonsView(); renderHome();
+});
+$('#btnForm').addEventListener('input', e => {
+  const k = e.target.dataset.k; if (!k || e.target.tagName !== 'INPUT') return;
+  S.buttons[side][k] = e.target.value; save();
+  $('#btnSummary').innerHTML = longSummary(S.buttons[side]); renderHome();
+});
+$('#btnForm').addEventListener('click', e => { if (e.target.closest('#testBtn')) runButton(side); });
+
+/* ---------- escalation view ---------- */
+function levelSummary(l){
+  return `${T['m_'+l.action]} → ${l.contacts.length ? l.contacts.map(cName).join(', ') : T.nobody}`;
+}
+function renderEsc(popIdx){
+  const L = S.esc.levels;
+  if (S.current > L.length) S.current = L.length;
+  $('#escToggle').checked = S.esc.enabled;
+  $('#escBody').classList.toggle('off', !S.esc.enabled);
+  const cl = $('#curLabel'), txt = S.current ? `${S.current} · ${L[S.current-1].name}` : T.idle;
+  if (cl.textContent !== txt){ cl.textContent = txt; cl.classList.remove('swap'); void cl.offsetWidth; cl.classList.add('swap'); }
+  $('#meter').innerHTML = L.map((l,i) => `<i class="${i===popIdx?'pop':''}" style="background:${i < S.current ? l.color : ''}"></i>`).join('');
+  $('#levels').innerHTML = L.map((l,i) => `
+    <button class="row link ${S.current===i+1?'active':''}" data-lvl="${l.id}" style="--c:${l.color}">
+      <span class="num">${i+1}</span>
+      <span class="k">${esc(l.name || T.level+' '+(i+1))}<small>${esc(levelSummary(l))}</small></span>
+      ${l.sos ? '<span class="pill112">112</span>' : ''}${CHEV}
+    </button>`).join('') + `<button class="row add link" id="addLevel">${T.addLevel}</button>`;
+  const COMBOS = ['left','right'].flatMap(sd => GES.map(g => [`${sd}|${g}`, `${sd==='left'?T.left:T.right} · ${T['g_'+g]}`]));
+  $('#gestures').innerHTML =
+    selRow(`▲ ${T.upWith}`, 'up', COMBOS, `${S.esc.upBtn}|${S.esc.upGes}`) +
+    selRow(`▼ ${T.downWith}`, 'down', COMBOS, `${S.esc.downBtn}|${S.esc.downGes}`);
+  $('#escWarn').classList.toggle('show', S.esc.upBtn===S.esc.downBtn && S.esc.upGes===S.esc.downGes);
+  $('#stepMsgs').innerHTML = L.map((l,i) => i).reverse().map(i => {
+    const l = L[i], own = (l.downMsg || '').trim();
+    return `<button class="row link" data-lvl="${l.id}" data-focus="downMsg" style="--c:${l.color}">
+      <span class="step"><i></i>${i+1} → ${i ? i : T.toIdle}</span>
+      <span class="k">${esc(l.name)}<small class="${own ? '' : 'dflt'}">${esc(own || T.usesDefault)}</small></span>${CHEV}</button>`;
+  }).join('');
+  if (document.activeElement !== $('#downMsg')) $('#downMsg').value = S.esc.downMsg;
+  $('#downMsg').placeholder = T.downDefault;
+  $('#downPresets').innerHTML = T.presets.map(p => `<button class="chip ${p===S.esc.downMsg?'on':''}" data-p="${esc(p)}">${esc(p)}</button>`).join('');
+  renderHome();
+}
+$('#escToggle').onchange = e => { S.esc.enabled = e.target.checked; if (!S.esc.enabled){ S.current = 0; S.notified = []; } save(); renderEsc(); toast(S.esc.enabled ? T.escOn : T.escOff); };
+$('#gestures').addEventListener('change', e => { const k = e.target.dataset.k; if (!k) return; const [bt, g] = e.target.value.split('|'); S.esc[k+'Btn'] = bt; S.esc[k+'Ges'] = g; save(); renderEsc(); });
+$('#downMsg').addEventListener('input', e => {
+  S.esc.downMsg = e.target.value; save();
+  document.querySelectorAll('#downPresets .chip').forEach(c => c.classList.toggle('on', c.dataset.p === S.esc.downMsg));
+});
+$('#downPresets').addEventListener('click', e => {
+  const c = e.target.closest('.chip'); if (!c) return;
+  S.esc.downMsg = c.dataset.p; save(); $('#downMsg').value = S.esc.downMsg;
+  document.querySelectorAll('#downPresets .chip').forEach(x => x.classList.toggle('on', x === c));
+});
+$('#levels').addEventListener('click', e => {
+  if (e.target.closest('#addLevel')){
+    const n = S.esc.levels.length;
+    const l = {id:uid(), name:`${T.level} ${n+1}`, color:COLORS[n % COLORS.length], contacts:[], action:'alert', message:'', auto:0, sos:false, downMsg:''};
+    S.esc.levels.push(l); save(); renderEsc(); openLevel(l.id); return;
+  }
+  const r = e.target.closest('[data-lvl]'); if (r) openLevel(r.dataset.lvl);
+});
+$('#stepMsgs').addEventListener('click', e => {
+  const r = e.target.closest('[data-lvl]'); if (!r) return;
+  openLevel(r.dataset.lvl);
+  setTimeout(() => { const i = $('#levelBody input[data-k=downMsg]'); if (i){ i.scrollIntoView({block:'center', behavior:'smooth'}); i.focus({preventScroll:true}); } }, 420);
+});
+$('#resetLvl').onclick = () => { S.current = 0; S.notified = []; save(); renderEsc(); toast(T.resetToast); };
+$('#simUp').onclick = () => stepLevel(1);
+$('#simDown').onclick = () => stepLevel(-1);
+
+/* level editor sheet */
+let editId = null;
+function openLevel(id){ editId = id; renderLevelSheet(); openSheet('#levelSheet'); }
+function renderLevelSheet(){
+  const L = S.esc.levels, i = L.findIndex(l => l.id === editId), l = L[i]; if (!l) return;
+  $('#lvlEyebrow').innerHTML = `<span style="color:${l.color}">●</span>&nbsp; ${T.level} ${i+1}`;
+  $('#levelBody').innerHTML = `
+    <input class="lvl-name" data-k="name" value="${esc(l.name)}" aria-label="${T.levelName}">
+    <div class="gtitle"><span class="eyebrow">${T.contactWho}</span></div>
+    <div class="group"><div class="row stack"><div class="chips">
+      ${S.contacts.map(c => `<button class="chip ${l.contacts.includes(c.id)?'on':''}" data-who="${c.id}">${esc(c.name)}</button>`).join('')}
+      <button class="chip add" data-newc>${T.add}</button>
+    </div></div></div>
+    <div class="group" style="margin-top:12px">
+      ${selRow(T.whatHappens, 'action', METHODS.map(m => [m, T['m_'+m]]), l.action)}
+      ${hasText(l.action) ? inRow(T.message, 'message', l.message, T.msgPh) : ''}
+      ${selRow(T.ifNobody, 'auto', [0,2,5,10,15,30].map(m => [String(m), m ? T.autoAfter(m) : T.stay]), String(l.auto))}
+      <label class="row"><span class="k">${T.show112}</span><span class="switch"><input type="checkbox" data-k="sos" ${l.sos?'checked':''}><span></span></span></label>
+    </div>
+    <div class="gtitle"><span class="eyebrow">▼ ${T.downTo(i)}</span></div>
+    <div class="group">${inRow(T.message, 'downMsg', l.downMsg || '', T.downOwnPh + ' — “' + (S.esc.downMsg || T.downDefault) + '”')}</div>
+    <div class="gtitle"><span class="eyebrow">${T.colour}</span></div>
+    <div class="group"><div class="row"><div class="colors">${COLORS.map(c => `<button class="sw ${c===l.color?'on':''}" style="background:${c}" data-col="${c}" aria-label="${T.colour}"></button>`).join('')}</div></div></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" data-mv="-1" ${i===0?'disabled style="opacity:.3"':''}>↑ ${T.moveUp}</button>
+      <button class="btn ghost" data-mv="1" ${i===L.length-1?'disabled style="opacity:.3"':''}>↓ ${T.moveDown}</button>
+    </div>
+    <button class="btn danger full" data-del style="margin-top:8px">${T.del}</button>`;
+}
+const curLevel = () => S.esc.levels.find(l => l.id === editId);
+$('#levelBody').addEventListener('click', e => {
+  const l = curLevel(); if (!l) return;
+  const who = e.target.closest('[data-who]');
+  if (who){ const c = who.dataset.who; l.contacts = l.contacts.includes(c) ? l.contacts.filter(x => x!==c) : [...l.contacts, c]; who.classList.toggle('on'); save(); renderEsc(); return; }
+  if (e.target.closest('[data-newc]')){ openAddContact(c => { l.contacts.push(c.id); save(); renderEsc(); renderLevelSheet(); }); return; }
+  const sw = e.target.closest('[data-col]');
+  if (sw){ l.color = sw.dataset.col; document.querySelectorAll('#levelBody .sw').forEach(x => x.classList.toggle('on', x === sw));
+    $('#lvlEyebrow span').style.color = l.color; save(); renderEsc(); return; }
+  const mv = e.target.closest('[data-mv]');
+  if (mv){ const L = S.esc.levels, i = L.indexOf(l), j = i + (+mv.dataset.mv); if (j < 0 || j >= L.length) return;
+    L.splice(j, 0, L.splice(i,1)[0]); save(); renderEsc(); renderLevelSheet(); return; }
+  if (e.target.closest('[data-del]')){
+    if (S.esc.levels.length <= 1){ toast(T.keepOne); return; }
+    S.esc.levels = S.esc.levels.filter(x => x !== l); save(); closeSheet('#levelSheet'); renderEsc(); toast(`${T.removed} · <b>${esc(l.name)}</b>`);
+  }
+});
+$('#levelBody').addEventListener('change', e => {
+  const l = curLevel(), k = e.target.dataset.k; if (!l || !k) return;
+  if (k === 'sos'){ l.sos = e.target.checked; save(); renderEsc(); return; }
+  if (e.target.tagName !== 'SELECT') return;
+  l[k] = k === 'auto' ? +e.target.value : e.target.value; save(); renderEsc(); renderLevelSheet();
+});
+$('#levelBody').addEventListener('input', e => {
+  const l = curLevel(), k = e.target.dataset.k; if (!l || !k || e.target.type === 'checkbox' || e.target.tagName !== 'INPUT') return;
+  l[k] = e.target.value; save(); renderEsc();
+});
+
+function stepLevel(dir){
+  if (!S.esc.enabled){ toast(T.escIsOff); return; }
+  const L = S.esc.levels;
+  const prev = S.current;
+  const next = Math.max(0, Math.min(L.length, S.current + dir));
+  if (next === S.current){ toast(dir > 0 ? T.highest : T.alreadyIdle); return; }
+  S.current = next;
+  const names = ids => ids.length ? T.sentTo + ' ' + ids.map(cName).map(esc).join(', ') : T.nobody;
+  if (dir < 0){
+    const to = S.notified.length ? S.notified : L.flatMap(l => l.contacts);
+    const leaving = L[prev-1];
+    const msg = ((leaving && leaving.downMsg) || '').trim() || (S.esc.downMsg || '').trim() || T.downDefault;
+    const lv = next ? L[next-1] : null;
+    const sent = sendAlert(to, {title: lv ? `▼ ${T.level} ${next} · ${lv.name}` : `${T.alertLbl} · ${T.backNormal}`, text:msg, color: lv ? lv.color : '#6fd6a8'});
+    if (next === 0) S.notified = [];
+    save(); renderEsc();
+    toast(`▼ ${lv ? `${T.level} ${next} · <b>${esc(lv.name)}</b>` : `<b>${T.backNormal}</b>`}<br>“${esc(msg)}” · ${names(sent)}`);
+    return;
+  }
+  const l = L[next-1];
+  const sent = sendAlert(l.contacts, {title:`▲ ${T.level} ${next} · ${l.name}`, text:hasText(l.action) ? l.message : '',
+    loc:l.action==='location'||l.action==='alertloc', callme:l.action==='callme', sos:l.sos, color:l.color});
+  S.notified = [...new Set([...S.notified, ...sent])]; save(); renderEsc(next-1);
+  toast(`▲ ${T.level} ${next} · <b>${esc(l.name)}</b><br>${names(sent)}`);
+}
+
+/* ---------- chats ---------- */
+function sendAlert(ids, a){
+  const uniq = [...new Set(ids)].filter(id => S.contacts.some(c => c.id === id));
+  uniq.forEach(id => {
+    (S.chats[id] = S.chats[id] || []).push({k:'alert', t:Date.now(), ...a});
+    if (!(view === 'thread' && thread === id)) S.unread[id] = (S.unread[id] || 0) + 1;
+  });
+  save(); renderChats(); renderBadge(); if (view === 'thread') renderThread(true);
+  return uniq;
+}
+function renderBadge(){
+  const n = Object.values(S.unread).reduce((a,b) => a+b, 0);
+  $('#tabBadge').innerHTML = n ? `<span class="ub">${n}</span>` : '';
+}
+function renderChats(){
+  $('#chatList').innerHTML = S.contacts.map(c => {
+    const ms = S.chats[c.id] || [], last = ms[ms.length-1], u = S.unread[c.id];
+    const p = !last ? T.noMsgs : last.k === 'alert' ? `${last.title}${last.text ? ' · '+last.text : ''}` : last.text;
+    return `<button class="row link crow" data-c="${c.id}">
+      <span class="av" style="background:${avColor(c.id)}">${esc((c.name[0] || '?').toUpperCase())}</span>
+      <span class="k">${esc(c.name)}<small class="${last && last.k==='alert' ? 'al' : ''}">${esc(p)}</small></span>
+      <span class="rt">${last ? hhmm(last.t) : ''}${u ? `<span class="ub">${u}</span>` : ''}</span>
+    </button>`;
+  }).join('');
+}
+$('#chatList').addEventListener('click', e => {
+  const r = e.target.closest('.crow'); if (!r) return;
+  thread = r.dataset.c; delete S.unread[thread]; save(); renderBadge(); renderChats(); renderThread(); show('thread');
+});
+$('#backBtn').onclick = () => { show('chats'); setTimeout(() => { if (view !== 'thread') thread = null; }, 200); };
+function msgHTML(m, animate){
+  const st = animate ? '' : 'animation:none;';
+  if (m.k === 'alert') return `<div class="bub alert" style="${st}--c:${m.color || '#5b8cff'}">
+      <span class="eyebrow">${esc(m.title)}</span>${m.text ? `<p>${esc(m.text)}</p>` : ''}
+      <div class="tags">${m.loc ? `<span class="tag live">${T.liveLoc}</span>` : ''}${m.callme ? `<span class="tag">${T.callMe}</span>` : ''}<span class="tag">${hhmm(m.t)}</span></div>
+      ${m.sos ? `<button class="call112" data-112>${T.call112}</button>` : ''}</div>`;
+  return `<div class="bub ${m.k}" style="${st}">${esc(m.text)}<time>${hhmm(m.t)}</time></div>`;
+}
+function renderThread(animateLast){
+  const c = S.contacts.find(x => x.id === thread); if (!c) return;
+  $('#thName').textContent = c.name;
+  $('#thAv').textContent = (c.name[0] || '?').toUpperCase(); $('#thAv').style.background = avColor(c.id);
+  const ms = S.chats[c.id] || [];
+  $('#msgs').innerHTML = `<div class="day">${T.today}</div>` + (ms.length ? ms.map((m,i) => msgHTML(m, animateLast ? i === ms.length-1 : true)).join('') : `<div class="day">${T.noMsgs}</div>`);
+  if (animateLast) window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
+}
+$('#msgs').addEventListener('click', e => { if (e.target.closest('[data-112]')) toast(T.call112Toast); });
+$('#sendForm').onsubmit = e => {
+  e.preventDefault();
+  const v = $('#msgInput').value.trim(); if (!v || !thread) return;
+  (S.chats[thread] = S.chats[thread] || []).push({k:'me', text:v, t:Date.now()});
+  $('#msgInput').value = ''; save(); renderThread(true); renderChats();
+};
+
+/* ---------- contacts ---------- */
+let contactCallback = null;
+function openAddContact(cb){ contactCallback = cb; $('#contactForm').reset(); openSheet('#contactSheet'); setTimeout(() => $('#cName').focus(), 300); }
+$('#cCancel').onclick = () => closeSheet('#contactSheet');
+$('#contactForm').onsubmit = e => {
+  e.preventDefault();
+  const c = {id:uid(), name:$('#cName').value.trim(), phone:$('#cPhone').value.trim()}; if (!c.name) return;
+  S.contacts.push(c); S.chats[c.id] = []; save(); closeSheet('#contactSheet');
+  contactCallback && contactCallback(c);
+  renderAll(); toast(`<b>${esc(c.name)}</b> ${T.added}`);
+};
+$('#inviteBtn').onclick = () => openAddContact(null);
+
+/* ---------- settings & onboarding ---------- */
+let resetArmed = false;
+function renderSettings(){
+  $('#settingsBody').innerHTML = `
+    <div class="gtitle"><span class="eyebrow">${T.language}</span></div>
+    <div class="seg" id="langSeg"><span class="ind"></span>
+      <button data-lang="fr" class="${lang==='fr'?'on':''}">Français</button><button data-lang="en" class="${lang==='en'?'on':''}">English</button></div>
+    <div class="gtitle"><span class="eyebrow">${T.wearer}</span></div>
+    <div class="group">${selRow(T.wearer, 'mode', [['wearer',T.wearerMe],['guardian',T.wearerOther]], S.mode || 'wearer')}</div>
+    <div class="gtitle"><span class="eyebrow">${T.device}</span></div>
+    <div class="group">
+      <div class="row"><span class="k">${T.device}</span><span class="v">${esc(devName || T.notConnected)}</span></div>
+      <div class="row"><span class="k">${T.battery}</span><span class="v">${esc(battery || '—')}</span></div>
+    </div>
+    <div class="group" style="margin-top:12px"><button class="row link danger" id="resetAll"><span class="k">${resetArmed ? T.resetConfirm : T.resetDemo}</span></button></div>
+    <p class="foot">${T.about}</p>`;
+  requestAnimationFrame(() => placeInd($('#langSeg'), true));
+}
+$('#settingsBtn').onclick = () => { resetArmed = false; renderSettings(); openSheet('#settingsSheet'); };
+$('#settingsBody').addEventListener('click', e => {
+  const lb = e.target.closest('[data-lang]');
+  if (lb && lb.dataset.lang !== lang){
+    const seg = $('#langSeg'); seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === lb)); placeInd(seg);
+    lang = lb.dataset.lang; T = I18N[lang]; try { localStorage.setItem(LANG_KEY, lang); } catch(err){}
+    setTimeout(() => { applyLang(); renderSettings(); }, 320); return;
+  }
+  if (e.target.closest('#resetAll')){
+    if (!resetArmed){ resetArmed = true; renderSettings(); return; }
+    const mode = S.mode; S = DEFAULT(); S.mode = mode; migrate(); save(); resetArmed = false; renderAll(); renderSettings(); toast(T.resetToast);
+  }
+});
+$('#settingsBody').addEventListener('change', e => { if (e.target.dataset.k === 'mode'){ S.mode = e.target.value; save(); renderHome(); renderSettings(); } });
+document.querySelectorAll('#onboard .choice').forEach(b => b.onclick = () => { S.mode = b.dataset.mode; save(); renderHome(); closeSheet('#onboard'); });
+
+/* ---------- fake call / text ---------- */
+function showFakeCall(name){ name = (name || '').trim() || T.callerPh; $('#fakeCall').classList.remove('closing'); $('#fcName').textContent = name; $('#fcAv').textContent = name[0].toUpperCase(); $('#fakeCall').classList.add('show'); }
+function closeFakeCall(){ const f = $('#fakeCall'); f.classList.add('closing'); setTimeout(() => f.classList.remove('show','closing'), 350); }
+document.querySelectorAll('[data-fc]').forEach(b => b.onclick = closeFakeCall);
+let ftT;
+function showFakeText(name, text){
+  $('#ftName').textContent = (name || '').trim() || T.callerPh; $('#ftText').textContent = text || '…';
+  const b = $('#fakeText'); b.classList.add('show'); clearTimeout(ftT); ftT = setTimeout(() => b.classList.remove('show'), 4200);
+}
+$('#fakeText').onclick = () => $('#fakeText').classList.remove('show');
+
+/* ---------- bracelet ---------- */
+function flashButton(s){
+  const g = $(s==='left' ? '#svgL' : '#svgR'), shape = g.querySelector('.btnshape');
+  shape.classList.remove('pressed'); void shape.getBBox(); shape.classList.add('pressed');
+  const rip = $(s==='left' ? '#ripL' : '#ripR'); rip.classList.remove('go'); void rip.getBBox(); rip.classList.add('go');
+  const led = $('#led'); led.setAttribute('fill','#5b8cff'); setTimeout(() => led.setAttribute('fill', led.classList.contains('live') ? '#5b8cff' : '#3a3940'), 600);
+  const row = $('#home-'+s); if (row){ row.classList.add('flash'); setTimeout(() => row.classList.remove('flash'), 700); }
+}
+function runButton(s){
+  flashButton(s);
+  const b = S.buttons[s];
+  if (b.type === 'contact'){
+    const sent = sendAlert([b.contactId], {title:`${T.alertLbl} · ${BTN(s)}`, text:hasText(b.method) ? b.message : '', loc:b.method==='location'||b.method==='alertloc', callme:b.method==='callme'});
+    toast(`<b>${BTN(s)}</b> · ${T['m_'+b.method]}<br>${T.sentTo} ${sent.map(cName).map(esc).join(', ')}`);
+  } else if (b.cAction === 'fakecall') setTimeout(() => showFakeCall(b.cName), 350);
+  else if (b.cAction === 'faketext') showFakeText(b.cName, b.cMessage);
+  else { const sent = sendAlert([b.cContactId], {title:b.cLabel || T.customDefault, text:b.cMessage});
+    toast(`<b>${esc(b.cLabel || T.customDefault)}</b><br>${T.sentTo} ${sent.map(cName).map(esc).join(', ')}`); }
+}
+function handleGesture(s, gesture){
+  if (gesture === 'hold2') return runButton(s);
+  flashButton(s);
+  if (S.esc.upBtn===s && S.esc.upGes===gesture) return stepLevel(1);
+  if (S.esc.downBtn===s && S.esc.downGes===gesture) return stepLevel(-1);
+  toast(`${BTN(s)} · ${T['g_'+gesture]} (${T.notAssigned})`);
+}
+document.querySelectorAll('.hit').forEach(g => g.addEventListener('click', () => runButton(g.dataset.btn)));
+
+/* ---------- Bluetooth ---------- */
+let device = null, demo = false, devName = '', battery = '', statusKey = 'st_off', statusState = 'off';
+function setStatus(state, key){
+  statusState = state; statusKey = key;
+  $('#dot').className = 'dot' + (state==='on' ? ' on' : state==='busy' ? ' busy' : '');
+  $('#statusText').textContent = T[key] + (state === 'on' && battery ? ` · ${battery}` : '');
+  $('#connectBtn').textContent = state==='on' ? T.disconnect : T.connect;
+  $('#connectBtn').classList.toggle('acc', state!=='on'); $('#connectBtn').classList.toggle('ghost', state==='on');
+  const led = $('#led'); led.classList.toggle('live', state==='on'); led.setAttribute('fill', state==='on' ? '#5b8cff' : '#3a3940');
+}
+function showBtHelp(reason){ $('#btReason').textContent = reason; openSheet('#btSheet'); }
+$('#btClose').onclick = () => closeSheet('#btSheet');
+$('#btDemo').onclick = () => {
+  closeSheet('#btSheet'); demo = true; setStatus('busy','st_connecting');
+  setTimeout(() => { devName = 'ORBITA-Demo'; battery = '86%'; setStatus('on','st_demo'); toast(T.demoConnected); }, 900);
+};
+const GESTURE_MAP = {0x01:['left','hold2'],0x02:['right','hold2'],0x11:['left','double'],0x12:['right','double'],0x21:['left','triple'],0x22:['right','triple'],0x31:['left','hold5'],0x32:['right','hold5']};
+async function connect(){
+  if (device || demo){ if (device && device.gatt.connected) device.gatt.disconnect(); device = null; demo = false; devName = battery = ''; setStatus('off','st_off'); return; }
+  if (!('bluetooth' in navigator)){ showBtHelp(T.btNoSupport); return; }
+  try {
+    setStatus('busy','st_search');
+    device = await navigator.bluetooth.requestDevice({acceptAllDevices:true, optionalServices:['battery_service', ORBITA_SERVICE]});
+    device.addEventListener('gattserverdisconnected', () => { device = null; devName = battery = ''; setStatus('off','st_disc'); toast(T.btDisc); });
+    setStatus('busy','st_connecting');
+    const server = await device.gatt.connect();
+    devName = device.name || '—'; setStatus('on','st_on'); toast(`${T.connectedTo} <b>${esc(devName)}</b>`);
+    try { const bs = await server.getPrimaryService('battery_service'); const ch = await bs.getCharacteristic('battery_level');
+      const v = await ch.readValue(); battery = v.getUint8(0) + '%'; setStatus('on','st_on'); } catch(e){}
+    try { const os = await server.getPrimaryService(ORBITA_SERVICE); const ev = await os.getCharacteristic(ORBITA_EVENT);
+      await ev.startNotifications(); ev.addEventListener('characteristicvaluechanged', e => { const g = GESTURE_MAP[e.target.value.getUint8(0)]; if (g) handleGesture(g[0], g[1]); });
+    } catch(e){ toast(T.noService); }
+  } catch(err){
+    device = null; setStatus('off','st_off');
+    if (err && err.name === 'NotFoundError') return;
+    showBtHelp(err && err.name === 'SecurityError' ? T.btBlocked : T.btFail + (err && err.message || err));
+  }
+}
+$('#connectBtn').onclick = connect;
+
+/* ---------- language / render all ---------- */
+function renderAll(){ renderHome(); renderButtonsView(); renderEsc(); renderChats(); renderBadge(); if (thread) renderThread(); }
+function applyLang(){
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => el.innerHTML = T[el.dataset.i18n]);
+  $('#msgInput').placeholder = T.typePh;
+  setStatus(statusState, statusKey);
+  renderAll(); requestAnimationFrame(moveTabPill);
+}
+
+/* ---------- launch animation ---------- */
+function bootDone(){
+  const sp = $('#splash'); if (!sp || sp.classList.contains('out')) return;
+  sp.classList.add('out'); document.body.classList.remove('booting');
+  const v = $('#v-home'); v.classList.remove('enter'); void v.offsetWidth; v.classList.add('enter');
+  if (!S.mode) setTimeout(() => openSheet('#onboard'), 350);
+  setTimeout(() => sp.remove(), 500);
+}
+(function boot(){
+  const fit = () => { const b = $('#spBox'); if (b) b.style.transform = `scale(${Math.min(innerWidth/390, innerHeight/844, 1.4)})`; };
+  fit(); addEventListener('resize', fit);
+  setTimeout(bootDone, matchMedia('(prefers-reduced-motion: reduce)').matches ? 900 : 3700);
+  $('#splash').addEventListener('click', bootDone);
+})();
+
+applyLang();
+$('#v-home').classList.add('enter');
+addEventListener('resize', () => moveSeg(true));
+if (document.fonts) document.fonts.ready.then(() => { moveSeg(true); moveTabPill(); });
+moveTabPill();
+</script>
+</body>
+</html>
